@@ -1573,48 +1573,36 @@ int main()
     }
 
 
-
+////////使用OpenCV对摄像头图像进行获取////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /*获取streamPtr的frame*/
-
     std::cout << "" << std::endl;
     std::cout << "开始读图" << std::endl;
-
     CFrame frame;
     streamPtr -> getFrame(frame, 500);
     int rows = frame.getImageHeight();
     int cols = frame.getImageWidth();
-
     std::cout << "读图成功" << std::endl;
     std::cout << "rows=" << rows << std::endl;
     std::cout << "cols=" << cols << std::endl;
 
-
-
-    /* opencv建立IplImage指针*/
-
-    IplImage* ipl = cvCreateImageHeader(cvSize(rows,cols),10,3);//3表示24位，灰度请改为1
-
+    /* opencv建立IplImage指针指向图像内存首地址frame.getImage()*/
+    //图像为10bit位深，需要修改这一行的IPL_DEPTH_8U，否则后面cvShowImage会报错：segmentation fault缓冲区溢出
+    IplImage* ipl = cvCreateImageHeader(cvSize(rows,cols),IPL_DEPTH_8U,3);
+    
     std::cout << "创建指针成功" << std::endl;
-
     cvSetData(ipl, frame.getImage(), cols*3);
-    // IplImage* ipl = cvCreateImage(cvSize(rows,cols), IPL_DEPTH_8U, 3);
-    // ipl = (IplImage*)frame.getImage();
-
-    std::cout << "set data 成功" << std::endl;
+    std::cout << "set data成功" << std::endl;
 
     /* opencv输出图像*/
-
-    // cv::Mat mat = cv::cvarrToMat(ipl); 
-    // cv::imshow("image",mat);
     cvShowImage("image", ipl);
     cvWaitKey(0);
     cvReleaseImage(&ipl);
-
     std::cout << "输出图像成功" << std::endl;
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     

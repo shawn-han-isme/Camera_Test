@@ -1,5 +1,12 @@
 # Camera_Test
 
+## SimpleSample
+
+- SimpleSample是工业相机的C++实例文件，我修改了一些SDK文件以使用OpenCV对摄像头图像进行获取
+- 使用方法：在SimpleSample文件夹下运行sudo make编译后 执行./runSample.sh命令运行
+- 问题：line 1591 使用cvCreateImageHeader()前需要将图像位深改为8bit，否则后面cvShowImage会报错：segmentation fault缓冲区溢出
+- [参考网页:OpenCV 处理内存中的图像数据](https://blog.csdn.net/b5w2p0/article/details/10973071)
+
 ## 曝光模式
 
 |曝光模式|含义|
