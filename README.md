@@ -7,6 +7,10 @@
 - 问题：line 1591 使用cvCreateImageHeader()前需要将图像位深改为8bit，否则后面cvShowImage会报错：segmentation fault缓冲区溢出
 - [参考网页:OpenCV 处理内存中的图像数据](https://blog.csdn.net/b5w2p0/article/details/10973071)
 
+## RP_Infantry_Plus-master
+
+- RP_Infantry_Plus-master是深大的自瞄代码，和我们用的是同款相机
+
 ## 曝光模式&曝光时间（us）（建议10000us）
 
 |曝光模式|含义|
