@@ -6,6 +6,10 @@
 #else
 #include <arpa/inet.h>
 #endif
+
+#include "iostream"
+#include "include/Camera/video.h"
+
 #include "GenICam/System.h"
 #include "GenICam/Camera.h"
 #include "GenICam/StreamSource.h"
@@ -14,9 +18,16 @@
 #include "Infra/PrintLog.h"
 #include "StreamRetrieve.h"
 #include "Memory/SharedPtr.h"
+#include <opencv2/opencv.hpp>
+#include "./include/GenICam/Frame.h"
 
+using namespace std;
 using namespace Dahua::GenICam;
 using namespace Dahua::Infra;
+
+#define BUFFER_SIZE 1
+#define EXPOSURE (3000 + 2000)// 5000
+
 
 /* 4、设置相机采图模式（连续采图、触发采图） */
 static int32_t setGrabMode(ICameraPtr& cameraSptr, bool bContious)
@@ -1423,184 +1434,374 @@ static int selectDevice(int cameraCnt)
 // ********************** 这部分处理与SDK操作相机无关，用于显示设备列表 end*****************************
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ImageData {
+    Mat img;
+    unsigned int frame;
+};
+ImageData data[BUFFER_SIZE];
+
 int main()
 {
- #if 0
-    PrintOptions printOptions = {0};
-    printOptions.color = 1;
-    setPrintOptions(printOptions);
+    //////////////////////// setting camera ///////////////////////////
 
-    LogPrinterProc procFun = LogPrinterFunc;
-    setLogPrinter(procFun);
-#endif
-    ICameraPtr cameraSptr;
+    // 创建工业相机的实例
+    Video v;
 
-    /* 发现设备 */
-    CSystem &systemObj = CSystem::getInstance();
-    TVector<ICameraPtr> vCameraPtrList;
-    bool isDiscoverySuccess = systemObj.discovery(vCameraPtrList);
-    if (!isDiscoverySuccess)
+    if (!v.videoCheck())
     {
-        printf("discovery device fail.\n");
-        return 0;
+        printf("videoCheck failed!\n");
+        return ;
+    }
+    if (!v.videoOpen())
+    {
+        printf("videoOpen failed!\n");
+        return ;
     }
 
-    if (vCameraPtrList.size() == 0)
+    //    v.setBufferSize(1);
+    v.SetExposeTime(EXPOSURE);                                   //设置曝光
+    v.setBalanceRatio(1,1,1);
+    Video::ETrigType type = Video::ETrigType::trigContinous; //改为连续拉流
+    v.CameraChangeTrig(type);                                //默认为软触发
+    if (!v.videoStart())
     {
-        printf("no devices.\n");
-        return 0;
+        printf("videoStart failed!\n");
+        return ;
     }
 
-	// print camera info (index,Type,vendor name, model,serial number,DeviceUserID,IP Address)
-	// 打印相机基本信息（序号,类型,制造商信息,型号,序列号,用户自定义ID,IP地址）
-	displayDeviceInfo(vCameraPtrList);
-	int cameraIndex = selectDevice(vCameraPtrList.size());
-	cameraSptr = vCameraPtrList[cameraIndex];
 
-	
-	/* GigE相机时，连接前设置相机Ip与网卡处于同一网段上 */
-	if( ICamera::typeGige == cameraSptr->getType())
-	{
-		if(autoSetCameraIP(cameraSptr) != 0)
-		{
-			printf("set camera Ip failed.\n");
-		}
-	}
-	
-    /* 连接相机 */
-    if (!cameraSptr->connect())
+    Mat img;
+
+    while(1)
     {
-        printf("connect cameral failed.\n");
-        return 0;
-	}
-
-	/* 设置相机为连续拉流模式 */
-    setGrabMode(cameraSptr, true);
-
-#if 0
-    setGrabMode(cameraSptr, true);
-    setGrabMode(cameraSptr, false);
-    bool bContious = false;
-    getGrabMode(cameraSptr, bContious);
-    triggerSoftware(cameraSptr);
-
-    int64_t nWidth, nHeight;
-    setResolution(cameraSptr, 640, 480);
-    getResolution(cameraSptr, nWidth, nHeight);
-
-    setBinning(cameraSptr);
-
-    getMaxResolution(cameraSptr, nWidth, nHeight);
-
-    int64_t nX, nY, nROIWidth, nROIHeight;
-    setROI(cameraSptr, 120, 120, 640, 480);
-    getROI(cameraSptr, nX, nY, nROIWidth, nROIHeight);
-
-    getWidth(cameraSptr, nWidth);
-    getHeight(cameraSptr, nHeight);
-
-    double dExposureTime = 0;
-    setExposureTime(cameraSptr, 100, true);
-    setExposureTime(cameraSptr, 10000, false);
-    getExposureTime(cameraSptr, dExposureTime);
-
-    double dMinExposure, dMaxExposure;
-    getExposureTimeMinMaxValue(cameraSptr, dMinExposure, dMaxExposure);
-
-    double dGainRaw = 0;
-    double dGainRawMin = 0;
-    double dGainRawMax = 0;
-    setGainRaw(cameraSptr, 1.2);
-    getGainRaw(cameraSptr, dGainRaw);
-    getGainRawMinMaxValue(cameraSptr, dGainRawMin, dGainRawMax);
-
-    double dGamma = 0;
-    double dGammaMin = 0;
-    double dGammaMax = 0;
-    setGamma(cameraSptr, 0.8);
-    getGamma(cameraSptr, dGamma);
-    getGammaMinMaxValue(cameraSptr, dGammaMin, dGammaMax);
-
-    double dRedBalanceRatio = 0;
-    double dGreenBalanceRatio = 0;
-    double dBlueBalanceRatio = 0;
-    double dMinBalanceRatio = 0;
-    double dMaxBalanceRatio = 0;
-    setBalanceRatio(cameraSptr, 1.5, 1.5, 1.5);
-    getBalanceRatio(cameraSptr, dRedBalanceRatio, dGreenBalanceRatio, dBlueBalanceRatio);
-    getBalanceRatioMinMaxValue(cameraSptr, dMinBalanceRatio, dMaxBalanceRatio);
-
-    double dFrameRate = 0;
-    setAcquisitionFrameRate(cameraSptr, 20);
-    getAcquisitionFrameRate(cameraSptr, dFrameRate);
-
-    userSetSave(cameraSptr);
-    loadUserSet(cameraSptr);
-
-    double dDelayTime = 0;
-    setTriggerDelay(cameraSptr, 20);
-    getTriggerDelay(cameraSptr, dDelayTime);
-
-    bool bRisingEdge = true;
-    setLineTriggerMode(cameraSptr, bRisingEdge);
-    getLineTriggerMode(cameraSptr, bRisingEdge);
-
-    double dLineDebouncerTimeAbs = 0;
-    setLineDebouncerTimeAbs(cameraSptr, 20);
-    getLineDebouncerTimeAbs(cameraSptr, dLineDebouncerTimeAbs);
-
-    setOutputTime(cameraSptr, 1000);
-
-    setReverseX(cameraSptr, false);
-    setReverseY(cameraSptr, false);
-#endif
-
-    /* 创建流对象 */
-    IStreamSourcePtr streamPtr = systemObj.createStreamSource(cameraSptr);
-    if (NULL == streamPtr)
-    {
-        printf("create stream obj  fail.\r\n");
-        return 0;
+        if (v.getFrame(img)){
+        }
+        else
+        {
+        printf("getFrame failed!\n");
+        }
     }
 
-	 /* 开始取图 */
-    bool isStartGrabbingSuccess = streamPtr->startGrabbing();
-    if (!isStartGrabbingSuccess)
-    {
-        printf("StartGrabbing  fail.\n");
-    }
+    
 
-    /* 创建取流线程 */
-    Dahua::Memory::TSharedPtr<StreamRetrieve> streamThreadSptr(new StreamRetrieve(streamPtr));
-    if (NULL == streamThreadSptr)
-    {
-        printf("create thread obj failed.\n");
-        return 0;
-    }
 
-	 /* 线程开始取图 */
-    streamThreadSptr->start();
 
-	 /* 取图2秒 */
-    CThread::sleep(2000);
 
-    /* 停止拉流线程 */
-    streamThreadSptr->stop();
 
-    /* 停止采图 */
-    streamPtr->stopGrabbing();
 
-    /* 修改相机曝光时间 */
-    modifyCamralExposureTime(systemObj, cameraSptr);
 
-    /* 断开相机 */
-    if (!cameraSptr->disConnect())
-    {
-        printf("disConnect camera failed\n");
-        return 0;
-    }
 
-    printf("disConnect successfully thread ID :%d\n", CThread::getCurrentThreadID());
 
-    return 1;
+
+
+
+return 0;
+
 }
+
+
+
+
+
+//  #if 0
+//     PrintOptions printOptions = {0};
+//     printOptions.color = 1;
+//     setPrintOptions(printOptions);
+
+//     LogPrinterProc procFun = LogPrinterFunc;
+//     setLogPrinter(procFun);
+// #endif
+//     ICameraPtr cameraSptr;
+
+//     /* 发现设备 */
+//     CSystem &systemObj = CSystem::getInstance();
+//     TVector<ICameraPtr> vCameraPtrList;
+//     bool isDiscoverySuccess = systemObj.discovery(vCameraPtrList);
+//     if (!isDiscoverySuccess)
+//     {
+//         printf("discovery device fail.\n");
+//         return 0;
+//     }
+
+//     if (vCameraPtrList.size() == 0)
+//     {
+//         printf("no devices.\n");
+//         return 0;
+//     }
+
+// 	// print camera info (index,Type,vendor name, model,serial number,DeviceUserID,IP Address)
+// 	// 打印相机基本信息（序号,类型,制造商信息,型号,序列号,用户自定义ID,IP地址）
+// 	displayDeviceInfo(vCameraPtrList);
+// 	int cameraIndex = selectDevice(vCameraPtrList.size());
+// 	cameraSptr = vCameraPtrList[cameraIndex];
+
+	
+// 	/* GigE相机时，连接前设置相机Ip与网卡处于同一网段上 */
+// 	if( ICamera::typeGige == cameraSptr->getType())
+// 	{
+// 		if(autoSetCameraIP(cameraSptr) != 0)
+// 		{
+// 			printf("set camera Ip failed.\n");
+// 		}
+// 	}
+	
+//     /* 连接相机 */
+//     if (!cameraSptr->connect())
+//     {
+//         printf("connect cameral failed.\n");
+//         return 0;
+// 	}
+
+// 	/* 设置相机为连续拉流模式 */
+//     setGrabMode(cameraSptr, true);
+
+// #if 0
+//     setGrabMode(cameraSptr, true);
+//     setGrabMode(cameraSptr, false);
+//     bool bContious = false;
+//     getGrabMode(cameraSptr, bContious);
+//     triggerSoftware(cameraSptr);
+
+//     int64_t nWidth, nHeight;
+//     setResolution(cameraSptr, 640, 480);
+//     getResolution(cameraSptr, nWidth, nHeight);
+
+//     setBinning(cameraSptr);
+
+//     getMaxResolution(cameraSptr, nWidth, nHeight);
+
+//     int64_t nX, nY, nROIWidth, nROIHeight;
+//     setROI(cameraSptr, 120, 120, 640, 480);
+//     getROI(cameraSptr, nX, nY, nROIWidth, nROIHeight);
+
+//     getWidth(cameraSptr, nWidth);
+//     getHeight(cameraSptr, nHeight);
+
+//     double dExposureTime = 0;
+//     setExposureTime(cameraSptr, 100, true);
+//     setExposureTime(cameraSptr, 10000, false);
+//     getExposureTime(cameraSptr, dExposureTime);
+
+//     double dMinExposure, dMaxExposure;
+//     getExposureTimeMinMaxValue(cameraSptr, dMinExposure, dMaxExposure);
+
+//     double dGainRaw = 0;
+//     double dGainRawMin = 0;
+//     double dGainRawMax = 0;
+//     setGainRaw(cameraSptr, 1.2);
+//     getGainRaw(cameraSptr, dGainRaw);
+//     getGainRawMinMaxValue(cameraSptr, dGainRawMin, dGainRawMax);
+
+//     double dGamma = 0;
+//     double dGammaMin = 0;
+//     double dGammaMax = 0;
+//     setGamma(cameraSptr, 0.8);
+//     getGamma(cameraSptr, dGamma);
+//     getGammaMinMaxValue(cameraSptr, dGammaMin, dGammaMax);
+
+//     double dRedBalanceRatio = 0;
+//     double dGreenBalanceRatio = 0;
+//     double dBlueBalanceRatio = 0;
+//     double dMinBalanceRatio = 0;
+//     double dMaxBalanceRatio = 0;
+//     setBalanceRatio(cameraSptr, 1.5, 1.5, 1.5);
+//     getBalanceRatio(cameraSptr, dRedBalanceRatio, dGreenBalanceRatio, dBlueBalanceRatio);
+//     getBalanceRatioMinMaxValue(cameraSptr, dMinBalanceRatio, dMaxBalanceRatio);
+
+//     double dFrameRate = 0;
+//     setAcquisitionFrameRate(cameraSptr, 20);
+//     getAcquisitionFrameRate(cameraSptr, dFrameRate);
+
+//     userSetSave(cameraSptr);
+//     loadUserSet(cameraSptr);
+
+//     double dDelayTime = 0;
+//     setTriggerDelay(cameraSptr, 20);
+//     getTriggerDelay(cameraSptr, dDelayTime);
+
+//     bool bRisingEdge = true;
+//     setLineTriggerMode(cameraSptr, bRisingEdge);
+//     getLineTriggerMode(cameraSptr, bRisingEdge);
+
+//     double dLineDebouncerTimeAbs = 0;
+//     setLineDebouncerTimeAbs(cameraSptr, 20);
+//     getLineDebouncerTimeAbs(cameraSptr, dLineDebouncerTimeAbs);
+
+//     setOutputTime(cameraSptr, 1000);
+
+//     setReverseX(cameraSptr, false);
+//     setReverseY(cameraSptr, false);
+// #endif
+
+//     /* 创建流对象 */
+//     IStreamSourcePtr streamPtr = systemObj.createStreamSource(cameraSptr);
+//     if (NULL == streamPtr)
+//     {
+//         printf("create stream obj  fail.\r\n");
+//         return 0;
+//     }
+
+// 	 /* 开始取图 */
+//     bool isStartGrabbingSuccess = streamPtr->startGrabbing();
+//     if (!isStartGrabbingSuccess)
+//     {
+//         printf("StartGrabbing  fail.\n");
+//     }
+
+
+// ////////使用OpenCV对摄像头图像进行获取////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//     /*获取streamPtr的frame*/
+//     std::cout << "" << std::endl;
+//     std::cout << "开始读图" << std::endl;
+//     CFrame frame;
+//     streamPtr -> getFrame(frame, 500);//分配空间、读入缓存区、获取图像文件
+//     int rows = frame.getImageHeight();
+//     int cols = frame.getImageWidth();
+//     std::cout << "读图成功" << std::endl;
+//     std::cout << "rows=" << rows << std::endl;
+//     std::cout << "cols=" << cols << std::endl;
+
+//     /* opencv建立IplImage指针指向图像内存首地址frame.getImage()*/
+//     //图像为10bit位深，需要修改这一行的IPL_DEPTH_8U，否则后面cvShowImage会报错：segmentation fault缓冲区溢出
+//     IplImage* ipl = cvCreateImageHeader(cvSize(rows,cols),IPL_DEPTH_8U,3);//不初始化图像数据
+//     //IplImage* ipl = cvCreateImage(cvSize(rows,cols),IPL_DEPTH_8U,3);//初始化图像数据(cvCreateImageHeader()与cvCreateData())
+//     //memcpy(img2->imageData, gray->imageData, gray->widthStep*gray->height)；//赋值
+
+//     std::cout << "创建指针成功" << std::endl;
+//     cvSetData(ipl, frame.getImage(), cols*3);/*cvSetData的第一个参数是目标图像头，比如像这里的ipl；第二个参数是要复制的源图像数据的位置；第三个参数是源图像的行长度*/
+//     std::cout << "set data成功" << std::endl;
+
+//     /* opencv输出图像*/
+//     cvShowImage("image", ipl);
+//     cvWaitKey(0);
+//     cvReleaseImage(&ipl);//将它的图像头释放，没有释放数据空间,若使用cvCreateImageHeader,则可以用同时释放数据和图像头
+//     std::cout << "输出图像成功" << std::endl;
+
+
+
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    
+
+
+//     /* 创建取流线程 */
+//     Dahua::Memory::TSharedPtr<StreamRetrieve> streamThreadSptr(new StreamRetrieve(streamPtr));
+//     if (NULL == streamThreadSptr)
+//     {
+//         printf("create thread obj failed.\n");
+//         return 0;
+//     }
+
+// 	 /* 线程开始取图 */
+//     streamThreadSptr->start();
+
+// 	/* 取图2秒 */
+//     CThread::sleep(2000);
+
+//     /* 停止拉流线程 */
+//     streamThreadSptr->stop();
+
+//     /* 停止采图 */
+//     streamPtr->stopGrabbing();
+
+//     /* 修改相机曝光时间 */
+//     modifyCamralExposureTime(systemObj, cameraSptr);
+
+//     /* 断开相机 */
+//     if (!cameraSptr->disConnect())
+//     {
+//         printf("disConnect camera failed\n");
+//         return 0;
+//     }
+
+//     printf("disConnect successfully thread ID :%d\n", CThread::getCurrentThreadID());
+
+//     return 1;
+// }
+// //test img0
+// //此方式可以在连续输入图像时，每张图像大小不确定时，且想在初始化时创建图像头
+// //先创建一个很小的图像空间头
+// img0 = cvCreateImageHeader(cvSize(1, 1), 8, 1); 
+// //初始化图像                      
+// cvInitImageHeader(img0,cvSize(gray->width,gray->height), 8, 1, 0, 4);
+// //连接数据
+// cvSetData(img0,gray->imageData, img0->widthStep);
+// //显示
+// cvNamedWindow("img0");
+// cvShowImage("img0", img0);
+// cvWaitKey(20);
+// //释放
+// cvReleaseImageHeader(&img0);  //将它的图像头释放，没有释放数据空间！
+// img0 = NULL;
+
+// // test img1
+// img1 = cvCreateImageHeader(cvSize(gray->width, gray->height), IPL_DEPTH_8U, 1);
+// cvSetData(img1,gray->imageData,img1->widthStep);
+
+// cvNamedWindow("img1");
+// cvShowImage("img1", img1);
+// cvWaitKey(20);
+
+// cvReleaseImageHeader(&img1);  //将它的图像头释放，没有释放数据空间！
+// img1 = NULL;
+
+// //test img2                   //此方法是已经确定传入图像的大小
+// img2 = cvCreateImage(cvSize(gray->width, gray->height), IPL_DEPTH_8U,1);
+// //赋值数据
+// memcpy(img2->imageData, gray->imageData, gray->widthStep*gray->height);
+
+// cvNamedWindow("img2");
+// cvShowImage("img2", img2);
+// cvWaitKey(20);
+
+// cvReleaseImage(&img2);   //将它的头和图像数据释放！
+// img2 = NULL;
+
+// //test img3
+// //先创建一个很小的图像空间头 因为不确定要传入图像的大小
+// img3 = cvCreateImageHeader(cvSize(1, 1), 8, 1); 
+// img3 = cvCreateImage(cvSize(gray->width, gray->height), IPL_DEPTH_8U, 1);
+// memcpy(img3->imageData, gray->imageData, gray->widthStep*gray->height);
+
+// cvNamedWindow("img3");
+// cvShowImage("img3", img3);
+// cvWaitKey(20);
+
+// cvReleaseImage(&img3);   //将它的头和图像数据释放！
+// img3 = NULL;

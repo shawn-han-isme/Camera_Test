@@ -83,7 +83,7 @@ public:
 	/// \~english
 	/// \brief Get the starting address of memory of this image data
 	/// \return Return the starting address of memory of this image data  	
-	const void * getImage() const;
+	void * getImage() const;
 			
 	/// \~chinese
 	/// \brief 获取数据帧状态
