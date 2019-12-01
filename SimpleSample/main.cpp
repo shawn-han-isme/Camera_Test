@@ -1579,7 +1579,7 @@ int main()
     std::cout << "" << std::endl;
     std::cout << "开始读图" << std::endl;
     CFrame frame;
-    streamPtr -> getFrame(frame, 500);
+    streamPtr -> getFrame(frame, 500);//分配空间、读入缓存区、获取图像文件
     int rows = frame.getImageHeight();
     int cols = frame.getImageWidth();
     std::cout << "读图成功" << std::endl;
@@ -1588,16 +1588,18 @@ int main()
 
     /* opencv建立IplImage指针指向图像内存首地址frame.getImage()*/
     //图像为10bit位深，需要修改这一行的IPL_DEPTH_8U，否则后面cvShowImage会报错：segmentation fault缓冲区溢出
-    IplImage* ipl = cvCreateImageHeader(cvSize(rows,cols),IPL_DEPTH_8U,3);
-    
+    IplImage* ipl = cvCreateImageHeader(cvSize(rows,cols),IPL_DEPTH_8U,3);//不初始化图像数据
+    //IplImage* ipl = cvCreateImage(cvSize(rows,cols),IPL_DEPTH_8U,3);//初始化图像数据(cvCreateImageHeader()与cvCreateData())
+    //memcpy(img2->imageData, gray->imageData, gray->widthStep*gray->height)；//赋值
+
     std::cout << "创建指针成功" << std::endl;
-    cvSetData(ipl, frame.getImage(), cols*3);
+    cvSetData(ipl, frame.getImage(), cols*3);/*cvSetData的第一个参数是目标图像头，比如像这里的ipl；第二个参数是要复制的源图像数据的位置；第三个参数是源图像的行长度*/
     std::cout << "set data成功" << std::endl;
 
     /* opencv输出图像*/
     cvShowImage("image", ipl);
     cvWaitKey(0);
-    cvReleaseImage(&ipl);
+    cvReleaseImage(&ipl);//将它的图像头释放，没有释放数据空间,若使用cvCreateImageHeader,则可以用同时释放数据和图像头
     std::cout << "输出图像成功" << std::endl;
 
 
@@ -1642,3 +1644,54 @@ int main()
 
     return 1;
 }
+// //test img0
+// //此方式可以在连续输入图像时，每张图像大小不确定时，且想在初始化时创建图像头
+// //先创建一个很小的图像空间头
+// img0 = cvCreateImageHeader(cvSize(1, 1), 8, 1); 
+// //初始化图像                      
+// cvInitImageHeader(img0,cvSize(gray->width,gray->height), 8, 1, 0, 4);
+// //连接数据
+// cvSetData(img0,gray->imageData, img0->widthStep);
+// //显示
+// cvNamedWindow("img0");
+// cvShowImage("img0", img0);
+// cvWaitKey(20);
+// //释放
+// cvReleaseImageHeader(&img0);  //将它的图像头释放，没有释放数据空间！
+// img0 = NULL;
+
+// // test img1
+// img1 = cvCreateImageHeader(cvSize(gray->width, gray->height), IPL_DEPTH_8U, 1);
+// cvSetData(img1,gray->imageData,img1->widthStep);
+
+// cvNamedWindow("img1");
+// cvShowImage("img1", img1);
+// cvWaitKey(20);
+
+// cvReleaseImageHeader(&img1);  //将它的图像头释放，没有释放数据空间！
+// img1 = NULL;
+
+// //test img2                   //此方法是已经确定传入图像的大小
+// img2 = cvCreateImage(cvSize(gray->width, gray->height), IPL_DEPTH_8U,1);
+// //赋值数据
+// memcpy(img2->imageData, gray->imageData, gray->widthStep*gray->height);
+
+// cvNamedWindow("img2");
+// cvShowImage("img2", img2);
+// cvWaitKey(20);
+
+// cvReleaseImage(&img2);   //将它的头和图像数据释放！
+// img2 = NULL;
+
+// //test img3
+// //先创建一个很小的图像空间头 因为不确定要传入图像的大小
+// img3 = cvCreateImageHeader(cvSize(1, 1), 8, 1); 
+// img3 = cvCreateImage(cvSize(gray->width, gray->height), IPL_DEPTH_8U, 1);
+// memcpy(img3->imageData, gray->imageData, gray->widthStep*gray->height);
+
+// cvNamedWindow("img3");
+// cvShowImage("img3", img3);
+// cvWaitKey(20);
+
+// cvReleaseImage(&img3);   //将它的头和图像数据释放！
+// img3 = NULL;
