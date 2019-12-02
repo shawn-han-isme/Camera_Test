@@ -15,7 +15,7 @@
 
 - SimpleSample_with_RP_Infantry_Plus-master 是我根据深大代码尝试编辑的SimpleSample，但是没能成功编译
 
-## 使能 & 曝光模式&曝光时间（us）
+## 使能 & 曝光模式&曝光时间（3500-4500us）
 
 |曝光模式|含义|
 |:-|:-|
