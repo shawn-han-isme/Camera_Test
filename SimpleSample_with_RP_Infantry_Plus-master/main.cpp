@@ -1668,7 +1668,7 @@ return 0;
 // #endif
 
 //     /* 创建流对象 */
-//     IStreamSourcePtr streamPtr = systemObj.createStreamSource(cameraSptr);
+    IStreamSourcePtr streamPtr = systemObj.createStreamSource(cameraSptr);
 //     if (NULL == streamPtr)
 //     {
 //         printf("create stream obj  fail.\r\n");
@@ -1689,7 +1689,7 @@ return 0;
 //     std::cout << "" << std::endl;
 //     std::cout << "开始读图" << std::endl;
 //     CFrame frame;
-//     streamPtr -> getFrame(frame, 500);//分配空间、读入缓存区、获取图像文件
+    // streamPtr -> getFrame(frame, 500);//分配空间、读入缓存区、获取图像文件
 //     int rows = frame.getImageHeight();
 //     int cols = frame.getImageWidth();
 //     std::cout << "读图成功" << std::endl;
