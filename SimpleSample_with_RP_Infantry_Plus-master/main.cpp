@@ -1668,7 +1668,7 @@ int main()
 // #endif
 
 //     /* 创建流对象 */
-//     IStreamSourcePtr streamPtr = systemObj.createStreamSource(cameraSptr);
+    IStreamSourcePtr streamPtr = systemObj.createStreamSource(cameraSptr);
 //     if (NULL == streamPtr)
 //     {
 //         printf("create stream obj  fail.\r\n");
