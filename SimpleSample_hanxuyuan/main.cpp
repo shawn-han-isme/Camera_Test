@@ -1615,6 +1615,9 @@ int main()
 
 //////////////根据深大代码进行改编///////////////////////////////////////////////////////////////////////////////////////////////////
 
+while(1)
+    {
+    
     /*获取streamPtr的frame*/
     std::cout << "" << std::endl;
     std::cout << "开始读图" << std::endl;
@@ -1670,9 +1673,18 @@ int main()
     size.height = PtrFrameBuffer->Height();
     size.width = PtrFrameBuffer->Width();
     cv::Mat img;
+
+    
     img = Mat(size, CV_8UC3, PtrFrameBuffer->bufPtr()).clone();
     frameClone.reset();
 
+    cv::imshow("image",img);
+    std::cout << "输出图像成功" << std::endl;
+    if(cv::waitKey(10) >= 0) break;
+
+
+    }
+    
 
 
 
