@@ -14,6 +14,9 @@
 #include "Infra/PrintLog.h"
 #include "StreamRetrieve.h"
 #include "Memory/SharedPtr.h"
+#include "include/Camera/video.h"
+#include "include/Media/ImageConvert.h"
+
 
 #include <opencv2/opencv.hpp>
 
@@ -1578,38 +1581,144 @@ int main()
 
     ////////使用OpenCV对摄像头图像进行获取////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // /*获取streamPtr的frame*/
+    // std::cout << "" << std::endl;
+    // std::cout << "开始读图" << std::endl;
+    // CFrame frame;
+    // streamPtr -> getFrame(frame, 500);//分配空间、读入缓存区、获取图像文件
+    // int rows = frame.getImageHeight();
+    // int cols = frame.getImageWidth();
+    // std::cout << "读图成功" << std::endl;
+    // std::cout << "rows=" << rows << std::endl;
+    // std::cout << "cols=" << cols << std::endl;
+
+    // /* opencv建立IplImage指针指向图像内存首地址frame.getImage()*/
+    // //图像为10bit位深，需要修改这一行的IPL_DEPTH_8U，否则后面cvShowImage会报错：segmentation fault缓冲区溢出
+    // IplImage* ipl = cvCreateImageHeader(cvSize(rows,cols),IPL_DEPTH_8U,3);//不初始化图像数据
+    // //IplImage* ipl = cvCreateImage(cvSize(rows,cols),IPL_DEPTH_8U,3);//初始化图像数据(cvCreateImageHeader()与cvCreateData())
+    // //memcpy(img2->imageData, gray->imageData, gray->widthStep*gray->height)；//赋值
+
+    // std::cout << "创建指针成功" << std::endl;
+    // cvSetData(ipl, frame.getImage(), cols*3);/*cvSetData的第一个参数是目标图像头，比如像这里的ipl；第二个参数是要复制的源图像数据的位置；第三个参数是源图像的行长度*/
+    // std::cout << "set data成功" << std::endl;
+
+    // /* opencv输出图像*/
+    // cvShowImage("image", ipl);
+    // cvWaitKey(0);
+    // cvReleaseImage(&ipl);//将它的图像头释放，没有释放数据空间,若使用cvCreateImageHeader,则可以用同时释放数据和图像头
+    // std::cout << "输出图像成功" << std::endl;
+
+
+
+
+
+
+//////////////根据深大代码进行改编///////////////////////////////////////////////////////////////////////////////////////////////////
+
+while(1)
+    {
+    
     /*获取streamPtr的frame*/
     std::cout << "" << std::endl;
     std::cout << "开始读图" << std::endl;
     CFrame frame;
-    streamPtr -> getFrame(frame, 500);//分配空间、读入缓存区、获取图像文件
-    int rows = frame.getImageHeight();
-    int cols = frame.getImageWidth();
-    std::cout << "读图成功" << std::endl;
-    std::cout << "rows=" << rows << std::endl;
-    std::cout << "cols=" << cols << std::endl;
+    CFrame frameClone;
+    bool isSuccess = streamPtr -> getFrame(frame, 500);//分配空间、读入缓存区、获取图像文件
+    if (!isSuccess)
+    {
+        printf("getFrame  fail.\n");
+        streamPtr->stopGrabbing();
+    }
+    
+    //判断帧的有效性
+    bool isValid = frame.valid();
+    if (!isValid)
+    {
+        printf("frame is invalid!\n");
+    }
+    
+    frameClone = frame.clone();
+    TSharedPtr<FrameBuffer> PtrFrameBuffer(new FrameBuffer(frameClone));
+    if (!PtrFrameBuffer)
+    {
+        printf("create PtrFrameBuffer failed!\n");
+    }
+    uint8_t *pSrcData = new (std::nothrow) uint8_t[frameClone.getImageSize()];
+    if (pSrcData)
+    {
+        memcpy(pSrcData, frameClone.getImage(), frameClone.getImageSize());
+    }
+    else
+    {
+        printf("new pSrcData failed!\n");
+    }
+    int dstDataSize = 0;
+    IMGCNV_SOpenParam openParam;
+    openParam.width = PtrFrameBuffer->Width();
+    openParam.height = PtrFrameBuffer->Height();
+    openParam.paddingX = PtrFrameBuffer->PaddingX();
+    openParam.paddingY = PtrFrameBuffer->PaddingY();
+    openParam.dataSize = PtrFrameBuffer->DataSize();
+    openParam.pixelForamt = PtrFrameBuffer->PixelFormat();
 
-    /* opencv建立IplImage指针指向图像内存首地址frame.getImage()*/
-    //图像为10bit位深，需要修改这一行的IPL_DEPTH_8U，否则后面cvShowImage会报错：segmentation fault缓冲区溢出
-    IplImage* ipl = cvCreateImageHeader(cvSize(rows,cols),IPL_DEPTH_8U,3);//不初始化图像数据
-    //IplImage* ipl = cvCreateImage(cvSize(rows,cols),IPL_DEPTH_8U,3);//初始化图像数据(cvCreateImageHeader()与cvCreateData())
-    //memcpy(img2->imageData, gray->imageData, gray->widthStep*gray->height)；//赋值
+    IMGCNV_EErr status = IMGCNV_ConvertToBGR24(pSrcData, &openParam, PtrFrameBuffer->bufPtr(), &dstDataSize);
+    if (IMGCNV_SUCCESS != status)
+    {
+        delete[] pSrcData;
+    }
+    delete[] pSrcData;
 
-    std::cout << "创建指针成功" << std::endl;
-    cvSetData(ipl, frame.getImage(), cols*3);/*cvSetData的第一个参数是目标图像头，比如像这里的ipl；第二个参数是要复制的源图像数据的位置；第三个参数是源图像的行长度*/
-    std::cout << "set data成功" << std::endl;
+    //将读进来的帧数据转化为opencv中的Mat格式操作
+    cv::Size size;
+    size.height = PtrFrameBuffer->Height();
+    size.width = PtrFrameBuffer->Width();
+    cv::Mat img;
 
-    /* opencv输出图像*/
-    cvShowImage("image", ipl);
-    cvWaitKey(0);
-    cvReleaseImage(&ipl);//将它的图像头释放，没有释放数据空间,若使用cvCreateImageHeader,则可以用同时释放数据和图像头
+    
+    img = Mat(size, CV_8UC3, PtrFrameBuffer->bufPtr()).clone();
+    frameClone.reset();
+
+    cv::imshow("image",img);
     std::cout << "输出图像成功" << std::endl;
+    if(cv::waitKey(10) >= 0) break;
+
+
+    }
+    
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+    
+    // int rows = frame.getImageHeight();
+    // int cols = frame.getImageWidth();
+    // std::cout << "读图成功" << std::endl;
+    // std::cout << "rows=" << rows << std::endl;
+    // std::cout << "cols=" << cols << std::endl;
+
+    // /* opencv建立IplImage指针指向图像内存首地址frame.getImage()*/
+    // //图像为10bit位深，需要修改这一行的IPL_DEPTH_8U，否则后面cvShowImage会报错：segmentation fault缓冲区溢出
+    // IplImage* ipl = cvCreateImageHeader(cvSize(rows,cols),IPL_DEPTH_8U,3);//不初始化图像数据
+    // //IplImage* ipl = cvCreateImage(cvSize(rows,cols),IPL_DEPTH_8U,3);//初始化图像数据(cvCreateImageHeader()与cvCreateData())
+    // //memcpy(img2->imageData, gray->imageData, gray->widthStep*gray->height)；//赋值
+
+    // std::cout << "创建指针成功" << std::endl;
+    // cvSetData(ipl, frame.getImage(), cols*3);/*cvSetData的第一个参数是目标图像头，比如像这里的ipl；第二个参数是要复制的源图像数据的位置；第三个参数是源图像的行长度*/
+    // std::cout << "set data成功" << std::endl;
+
+    // /* opencv输出图像*/
+    // cvShowImage("image", ipl);
+    // cvWaitKey(0);
+    // cvReleaseImage(&ipl);//将它的图像头释放，没有释放数据空间,若使用cvCreateImageHeader,则可以用同时释放数据和图像头
+    // std::cout << "输出图像成功" << std::endl;
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+    
 
 
 
