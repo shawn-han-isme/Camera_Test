@@ -1466,8 +1466,8 @@ IStreamSourcePtr startCamera(ICameraPtr cameraSptr, int64_t nX, int64_t nY, int6
         int cameraIndex = selectDevice(vCameraPtrList.size());
         cameraSptr = vCameraPtrList[cameraIndex];
     
-        setROI(cameraSptr, nX, nY, nWidth, nHeight);
-        
+        // setROI(cameraSptr, nX, nY, nWidth, nHeight); //设置ROI
+
         
         /* GigE相机时，连接前设置相机Ip与网卡处于同一网段上 */
         if( ICamera::typeGige == cameraSptr->getType())
