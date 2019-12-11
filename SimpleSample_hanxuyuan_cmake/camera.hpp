@@ -1431,8 +1431,9 @@ static int selectDevice(int cameraCnt)
 
 
 
-IStreamSourcePtr startCamera(ICameraPtr cameraSptr)
+IStreamSourcePtr startCamera(ICameraPtr cameraSptr, int64_t nX, int64_t nY, int64_t nWidth, int64_t nHeight)
 {
+
     #if 0
         PrintOptions printOptions = {0};
         printOptions.color = 1;
@@ -1464,7 +1465,9 @@ IStreamSourcePtr startCamera(ICameraPtr cameraSptr)
         displayDeviceInfo(vCameraPtrList);
         int cameraIndex = selectDevice(vCameraPtrList.size());
         cameraSptr = vCameraPtrList[cameraIndex];
-
+    
+        setROI(cameraSptr, nX, nY, nWidth, nHeight);
+        
         
         /* GigE相机时，连接前设置相机Ip与网卡处于同一网段上 */
         if( ICamera::typeGige == cameraSptr->getType())

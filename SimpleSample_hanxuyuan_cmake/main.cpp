@@ -19,9 +19,23 @@
 
 int main()
 {
+    //设置ROI参数
+    
+    // 默认值：
+    // int64_t nX = 0;
+    // int64_t nY = 0;
+    // int64_t nWidth = 1280;
+    // int64_t nHeight = 1024;
+
+    int64_t nX = 320;
+    int64_t nY = 256;
+    int64_t nWidth = 640;
+    int64_t nHeight = 512;
+
+
     cv::Mat mat;
     ICameraPtr cameraSptr;
-    IStreamSourcePtr streamPtr = sp::startCamera(cameraSptr);
+    IStreamSourcePtr streamPtr = sp::startCamera(cameraSptr, nX, nY, nWidth, nHeight);
 
     //开始转换Mat
     while (1)
