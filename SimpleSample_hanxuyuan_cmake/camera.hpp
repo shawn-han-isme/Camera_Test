@@ -1434,6 +1434,8 @@ static int selectDevice(int cameraCnt)
 IStreamSourcePtr startCamera(ICameraPtr cameraSptr, int64_t nX, int64_t nY, int64_t nWidth, int64_t nHeight)
 {
 
+    // setROI(cameraSptr, nX, nY, nWidth, nHeight); //设置ROI
+
     #if 0
         PrintOptions printOptions = {0};
         printOptions.color = 1;
@@ -1464,7 +1466,7 @@ IStreamSourcePtr startCamera(ICameraPtr cameraSptr, int64_t nX, int64_t nY, int6
         // 打印相机基本信息（序号,类型,制造商信息,型号,序列号,用户自定义ID,IP地址）
         displayDeviceInfo(vCameraPtrList);
         int cameraIndex = selectDevice(vCameraPtrList.size());
-        cameraSptr = vCameraPtrList[cameraIndex];
+        cameraSptr = vCameraPtrList[cameraIndex]; //实例cameraSPtr
     
         // setROI(cameraSptr, nX, nY, nWidth, nHeight); //设置ROI
 
