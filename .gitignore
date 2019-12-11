@@ -45,7 +45,7 @@ _build
 *.pch
 
 # Compiled Dynamic libraries
-*.so
+# *.so
 *.dylib
 *.dll
 
@@ -100,8 +100,8 @@ _build
 
 # Shared objects (inc. Windows DLLs)
 *.dll
-*.so
-*.so.*
+# *.so
+# *.so.*
 *.dylib
 
 # Executables
