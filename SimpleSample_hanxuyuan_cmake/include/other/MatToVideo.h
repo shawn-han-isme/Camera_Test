@@ -7,7 +7,7 @@ namespace sp
     {
     private:
         /* data */
-            CvVideoWriter  *frame_writer; //定义OpenCV自带的写视频指针
+            VideoWriter  frame_writer; //定义OpenCV自带的写视频指针
 
     public:
         MatToVideo(/* args */);
@@ -17,7 +17,8 @@ namespace sp
     
     MatToVideo::MatToVideo(/* args */)
     {
-            frame_writer = cvCreateVideoWriter("../Video/origin.avi",  CV_FOURCC('M','J','P','G'), 20.0, cvSize(320, 240), false);
+            //frame_writer = cvCreateVideoWriter("../Video/origin.avi",  CV_FOURCC('M','J','P','G'), 20.0, cvSize(320, 240), false);
+            frame_writer.open("../Video/origin.avi",  CV_FOURCC('M','J','P','G'), 120, cvSize(640, 480), false);
 
     }
     
@@ -43,7 +44,12 @@ namespace sp
     //初始化视频参数,参数意义分别为 文件名、压缩格式、帧率、分辨率、是否彩色视频(false代表灰度图)
 
     // cvWriteFrame(frame_writer, &IplImage(input_frame));
-    cvWriteFrame(frame_writer, &IplImage(input_frame));
+    // IplImage *qImg=&temp;
+    IplImage temp = IplImage(input_frame);
+    IplImage *qImg=&temp;
+    frame_writer.write(input_frame);//cvWriteFrame(frame_writer, qImg);
+    //IplImage temp = IplImage;
+    //IplImage *qImg=&IplImage;
 
     char c = cv::waitKey(1);
           switch (c)
@@ -51,7 +57,7 @@ namespace sp
 
              case 'q':
            {
-               cvReleaseVideoWriter(&frame_writer);
+               //cvReleaseVideoWriter(&frame_writer);
                       return -1;
                                     
         }

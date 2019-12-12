@@ -268,9 +268,10 @@ static int32_t setROI(ICameraPtr& cameraSptr, int64_t nX, int64_t nY, int64_t nW
     if (!bRet)
     {
         printf("set width fail.\n");
+
 	return -1;
     }
-
+cout<<100;
     /* height */
     intNode = sptrImageFormatControl->height();
     bRet = intNode.setValue(nHeight);
@@ -279,7 +280,7 @@ static int32_t setROI(ICameraPtr& cameraSptr, int64_t nX, int64_t nY, int64_t nW
         printf("set height fail.\n");
 	return -1;
     }
-
+cout<<101;
     /* OffsetX */
     intNode = sptrImageFormatControl->offsetX();
     bRet = intNode.setValue(nX);
@@ -288,7 +289,7 @@ static int32_t setROI(ICameraPtr& cameraSptr, int64_t nX, int64_t nY, int64_t nW
         printf("set offsetX fail.\n");
 	return -1;
     }
-
+cout<<1001;
     /* OffsetY */
     intNode = sptrImageFormatControl->offsetY();
     bRet = intNode.setValue(nY);
@@ -1435,7 +1436,16 @@ IStreamSourcePtr startCamera(ICameraPtr cameraSptr, int64_t nX, int64_t nY, int6
 {
 
     // setROI(cameraSptr, nX, nY, nWidth, nHeight); //设置ROI
-
+    
+    // getROI(cameraSptr, nX, nY, nWidth, nHeight);//获取ROI
+    //   cout<<10001;
+    //setExposureTime(cameraSptr, dExposureTime, bool bAutoExposure = false)//设置曝光
+    //getGainRaw(ICameraPtr& cameraSptr, double &dGainRaw)//设置增益
+    //setGamma(ICameraPtr& cameraSptr, double dGamma)//设置伽马值
+    //setBalanceRatio(ICameraPtr& cameraSptr, double dRedBalanceRatio, double dGreenBalanceRatio, double dBlueBalanceRatio)
+    //设置白平衡
+    //setAcquisitionFrameRate(ICameraPtr& cameraSptr, double dFrameRate)//设置针率
+    //
     #if 0
         PrintOptions printOptions = {0};
         printOptions.color = 1;
@@ -1497,18 +1507,24 @@ IStreamSourcePtr startCamera(ICameraPtr cameraSptr, int64_t nX, int64_t nY, int6
         getGrabMode(cameraSptr, bContious);
         triggerSoftware(cameraSptr);
 
-        int64_t nWidth, nHeight;
+        //int64_t nWidth, nHeight;
         setResolution(cameraSptr, 640, 480);
         getResolution(cameraSptr, nWidth, nHeight);
 
-        setBinning(cameraSptr);
+        //setBinning(cameraSptr);
 
         getMaxResolution(cameraSptr, nWidth, nHeight);
-
-        int64_t nX, nY, nROIWidth, nROIHeight;
-        setROI(cameraSptr, 120, 120, 640, 480);
-        getROI(cameraSptr, nX, nY, nROIWidth, nROIHeight);
-
+#endif
+        //int64_t nROIWidth, nROIHeight;
+        setExposureTime(cameraSptr, 20000,false);//设置曝光
+        setROI(cameraSptr, 120, 120, 640,480);
+        setGainRaw(cameraSptr, 5.00);//设置增益
+        setGamma(cameraSptr, 1.00);//设置伽马值
+        setBalanceRatio(cameraSptr, 1.00, 1.00, 1.00);
+         //设置白平衡 RGB
+         setAcquisitionFrameRate(cameraSptr, 120);//设置针率
+       // getROI(cameraSptr, nX, nY, nROIWidth, nROIHeight);
+ #if 0
         getWidth(cameraSptr, nWidth);
         getHeight(cameraSptr, nHeight);
 
